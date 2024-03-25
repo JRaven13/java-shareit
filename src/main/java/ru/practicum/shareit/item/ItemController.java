@@ -1,51 +1,64 @@
 package ru.practicum.shareit.item;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.shareit.item.model.Item;
+import ru.practicum.shareit.item.dto.ItemCreateDto;
+import ru.practicum.shareit.item.dto.ItemUpdateDto;
 import ru.practicum.shareit.item.service.ItemService;
 
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import java.util.List;
 
-@RestController
+/**
+ * TODO Sprint add-controllers.
+ */
+@Slf4j
 @RequiredArgsConstructor
-@RequestMapping(path = "/items")
+@RestController
+@RequestMapping("/items")
 public class ItemController {
 
-    private static final String USERID_HEADER = "X-Sharer-User-Id";
     private final ItemService itemService;
+    private static final String HEADER_USER = "X-Sharer-User-Id";
 
-
-    @GetMapping
-    public List<Item> getItems(@RequestHeader(USERID_HEADER) Long userId) {
-        return itemService.getItems(userId);
-    }
-
-    @GetMapping("/{itemId}")
-    public Item getItem(@PathVariable Long itemId) {
-        return itemService.getItem(itemId);
-    }
 
     @PostMapping
-    public Item addItem(@RequestHeader(USERID_HEADER) Long userId, @RequestBody Item item) {
-        return itemService.addItem(userId, item);
+    public ItemCreateDto create(@NotNull @RequestHeader(HEADER_USER) long userId,
+                                @Valid @RequestBody ItemCreateDto itemCreateDto) {
+        log.info("Income POST request DTO: {}, user ID: {}", itemCreateDto, userId);
+        return itemService.create(userId, itemCreateDto);
     }
 
     @PatchMapping("/{itemId}")
-    public Item updateItem(@RequestHeader(USERID_HEADER) Long userId,
-                           @PathVariable Long itemId,
-                           @RequestBody Item item) {
-        return itemService.updateItem(userId, itemId, item);
+    public ItemUpdateDto update(@NotNull @RequestHeader(HEADER_USER) long userId,
+                                @RequestBody ItemUpdateDto itemUpdateDto,
+                                @PathVariable long itemId) {
+        log.info("Income PATCH request DTO: {}, user ID: {}, item ID: {}", itemUpdateDto, userId, itemId);
+        return itemService.update(userId, itemUpdateDto, itemId);
     }
 
-    @DeleteMapping("/{itemId}")
-    public Boolean deleteItem(@PathVariable Long itemId) {
-        return itemService.deleteItem(itemId);
+    @GetMapping("/{itemId}")
+    public ItemCreateDto findByItemId(@NotNull @RequestHeader(HEADER_USER) long userId,
+                                      @PathVariable long itemId) {
+        log.info("Income GET request: user ID {}, item ID {}", userId, itemId);
+        return itemService.findByItemId(userId, itemId);
+
+    }
+
+    @GetMapping
+    public List<ItemCreateDto> findAllByUser(@NotNull @RequestHeader(HEADER_USER) long userId) {
+        log.info("Income GET request (find all by user): user ID {}", userId);
+        return itemService.findAllByUser(userId);
     }
 
     @GetMapping("/search")
-    public List<Item> searchItems(@RequestParam String text) {
-        return itemService.searchItems(text);
+    public List<ItemCreateDto> searchItems(@NotNull @RequestHeader(HEADER_USER) long userId,
+                                           @NotNull @RequestParam String text) {
+        log.info("Income GET request (search items): user id: {}, text: {}", userId, text);
+        return itemService.searchItems(userId, text);
     }
+
 
 }
