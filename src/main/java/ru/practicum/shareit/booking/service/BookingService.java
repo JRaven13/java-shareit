@@ -102,6 +102,7 @@ public class BookingService {
             throw new ObjectNotFoundException("This user not item owner.");
         }
 
+
         return BookingMapper.toBookingInfoDto(booking);
     }
 
