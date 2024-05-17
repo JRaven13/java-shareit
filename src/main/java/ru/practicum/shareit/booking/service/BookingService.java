@@ -93,7 +93,6 @@ public class BookingService {
         return BookingMapper.toBookingInfoDto(repository.save(booking));
     }
 
-
     public BookingInfoDto getCurrentBooking(Long userId, Long bookingId) {
         Booking booking = repository.findById(bookingId)
                 .orElseThrow(() ->
