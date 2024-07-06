@@ -1,6 +1,7 @@
 package ru.practicum.shareit.booking.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.booking.dto.BookingDto;
@@ -11,9 +12,9 @@ import ru.practicum.shareit.booking.repository.BookingRepository;
 import ru.practicum.shareit.booking.validator.BookingValidator;
 import ru.practicum.shareit.enums.BookingState;
 import ru.practicum.shareit.enums.BookingStatus;
-import ru.practicum.shareit.exceptions.InvalidEntityException;
-import ru.practicum.shareit.exceptions.ObjectNotFoundException;
-import ru.practicum.shareit.exceptions.UnknownBookingState;
+import ru.practicum.shareit.exception.InvalidEntityException;
+import ru.practicum.shareit.exception.ObjectNotFoundException;
+import ru.practicum.shareit.exception.UnknownBookingState;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.repository.ItemJpaRepository;
 import ru.practicum.shareit.user.model.User;
@@ -33,7 +34,6 @@ public class BookingService {
     private static final String USER_ERROR = "User not found.";
     private static final String ITEM_ERROR = "Item not found.";
     private static final String BOOKING_ERROR = "Booking not found.";
-    private static final String BOOKING_STATE_ERROR = "Unknown booking state.";
 
     private final BookingRepository repository;
     private final UserJpaRepository userRepository;
@@ -93,7 +93,6 @@ public class BookingService {
         return BookingMapper.toBookingInfoDto(repository.save(booking));
     }
 
-
     public BookingInfoDto getCurrentBooking(Long userId, Long bookingId) {
         Booking booking = repository.findById(bookingId)
                 .orElseThrow(() ->
@@ -103,10 +102,15 @@ public class BookingService {
             throw new ObjectNotFoundException("This user not item owner.");
         }
 
+
         return BookingMapper.toBookingInfoDto(booking);
     }
 
-    public List<BookingInfoDto> getBooking(Long userId, String stateParam) {
+    public List<BookingInfoDto> getBooking(Long userId, String stateParam, Integer from, Integer size) {
+
+        if (from < 0 || size < 0) {
+            throw new InvalidEntityException("Arguments can't be negative.");
+        }
 
         BookingState bookingState = checkState(stateParam);
 
@@ -119,7 +123,7 @@ public class BookingService {
 
         switch (bookingState) {
             case ALL:
-                bookingList = repository.findAllByBookerIdOrderByStartDesc(user.getId());
+                bookingList = repository.findAllByBookerIdOrderByStartDesc(user.getId(), PageRequest.of((from / size), size));
                 break;
             case PAST:
                 bookingList = repository.findAllByBookerIdAndEndIsBefore(user.getId(), dateTimeNow, sort);
@@ -136,8 +140,6 @@ public class BookingService {
             case REJECTED:
                 bookingList = repository.findAllByBookerIdAndStatus(user.getId(), BookingStatus.REJECTED);
                 break;
-            default:
-                throw new UnknownBookingState(BOOKING_STATE_ERROR);
         }
 
         return bookingList.isEmpty() ? Collections.emptyList() : bookingList.stream()
@@ -145,7 +147,11 @@ public class BookingService {
                 .collect(Collectors.toList());
     }
 
-    public List<BookingInfoDto> getOwnerBooking(Long userId, String stateParam) {
+    public List<BookingInfoDto> getOwnerBooking(Long userId, String stateParam, Integer from, Integer size) {
+
+        if (from < 0 || size < 0) {
+            throw new InvalidEntityException("Arguments can't be negative.");
+        }
 
         BookingState bookingState = checkState(stateParam);
 
@@ -158,7 +164,7 @@ public class BookingService {
 
         switch (bookingState) {
             case ALL:
-                bookingList = repository.findAllByItem_Owner_IdOrderByStartDesc(user.getId());
+                bookingList = repository.findAllByItem_Owner_IdOrderByStartDesc(user.getId(), PageRequest.of((from / size), size));
                 break;
             case PAST:
                 bookingList = repository.findAllByItem_Owner_IdAndEndIsBefore(user.getId(), dateTimeNow, sort);
@@ -175,8 +181,6 @@ public class BookingService {
             case REJECTED:
                 bookingList = repository.findAllByItem_Owner_IdAndStatus(user.getId(), BookingStatus.REJECTED);
                 break;
-            default:
-                throw new UnknownBookingState(BOOKING_STATE_ERROR);
         }
 
         return bookingList.isEmpty() ? Collections.emptyList() : bookingList.stream()
