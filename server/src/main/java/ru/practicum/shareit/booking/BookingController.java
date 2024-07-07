@@ -16,7 +16,6 @@ import static ru.practicum.shareit.GlobalConst.HEADER_USER;
 @Slf4j
 @RequiredArgsConstructor
 @RestController
-@Validated
 @RequestMapping(path = "/bookings")
 public class BookingController {
     private final BookingService bookingService;

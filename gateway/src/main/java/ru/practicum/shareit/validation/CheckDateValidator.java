@@ -1,4 +1,4 @@
-package ru.practicum.shareit.customValidation;
+package ru.practicum.shareit.validation;
 
 import ru.practicum.shareit.booking.dto.BookingDtoRequest;
 
